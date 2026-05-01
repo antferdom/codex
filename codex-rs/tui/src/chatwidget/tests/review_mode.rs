@@ -39,6 +39,7 @@ async fn interrupted_turn_restores_queued_messages_with_images_and_elements() {
             remote_image_urls: Vec::new(),
             text_elements: first_elements,
             mention_bindings: Vec::new(),
+            loop_state: None,
         }
         .into(),
     );
@@ -52,6 +53,7 @@ async fn interrupted_turn_restores_queued_messages_with_images_and_elements() {
             remote_image_urls: Vec::new(),
             text_elements: second_elements,
             mention_bindings: Vec::new(),
+            loop_state: None,
         }
         .into(),
     );
@@ -346,6 +348,7 @@ async fn restore_thread_input_state_restores_pending_steers_without_downgrading_
         rejected_steer_history_records: VecDeque::new(),
         queued_user_messages,
         queued_user_message_history_records: VecDeque::new(),
+        active_loop: None,
         user_turn_pending_start: false,
         current_collaboration_mode: chat.current_collaboration_mode.clone(),
         active_collaboration_mask: chat.active_collaboration_mask.clone(),
@@ -532,6 +535,7 @@ async fn item_completed_pops_pending_steer_with_local_image_and_text_elements() 
         remote_image_urls: Vec::new(),
         text_elements,
         mention_bindings: Vec::new(),
+        loop_state: None,
     });
 
     match next_submit_op(&mut op_rx) {

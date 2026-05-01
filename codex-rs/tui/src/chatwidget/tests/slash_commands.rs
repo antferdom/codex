@@ -837,6 +837,7 @@ fn merged_history_record_preserves_raw_text_and_rebased_elements() {
             mention: "figma".to_string(),
             path: "app://figma".to_string(),
         }],
+        loop_state: None,
     };
     let second = UserMessage::from("internal prompt");
 
@@ -882,6 +883,7 @@ fn merged_history_record_remaps_override_image_placeholders() {
             Some(first_placeholder.to_string()),
         )],
         mention_bindings: Vec::new(),
+        loop_state: None,
     };
     let second = UserMessage {
         text: format!("internal {second_placeholder}"),
@@ -895,6 +897,7 @@ fn merged_history_record_remaps_override_image_placeholders() {
             Some(second_placeholder.to_string()),
         )],
         mention_bindings: Vec::new(),
+        loop_state: None,
     };
 
     let (message, history_record) = merge_user_messages_with_history_record(vec![

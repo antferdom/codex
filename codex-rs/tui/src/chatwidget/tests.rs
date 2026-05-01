@@ -227,6 +227,7 @@ mod goal_menu;
 mod guardian;
 mod helpers;
 mod history_replay;
+mod loop_mode;
 mod mcp_startup;
 mod permissions;
 mod plan_mode;

@@ -9,6 +9,11 @@ use super::*;
 use crate::app_event::ThreadGoalSetMode;
 use crate::bottom_pane::prompt_args::parse_slash_name;
 use crate::bottom_pane::slash_commands;
+use crate::loop_mode::LoopMessageState;
+use crate::loop_mode::loop_started_message;
+use crate::loop_mode::loop_usage;
+use crate::loop_mode::parse_loop_command_args;
+use crate::loop_mode::split_task_text;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum SlashCommandDispatchSource {
@@ -168,6 +173,9 @@ impl ChatWidget {
             }
             SlashCommand::Review => {
                 self.open_review_popup();
+            }
+            SlashCommand::Loop => {
+                self.add_error_message(loop_usage());
             }
             SlashCommand::Rename => {
                 self.session_telemetry
@@ -533,6 +541,7 @@ impl ChatWidget {
             remote_image_urls,
             text_elements,
             mention_bindings,
+            loop_state: None,
         }
     }
 
@@ -669,6 +678,7 @@ impl ChatWidget {
                                 remote_image_urls: Vec::new(),
                                 text_elements: Vec::new(),
                                 mention_bindings: Vec::new(),
+                                loop_state: None,
                             },
                             QueuedInputAction::ParseSlash,
                         );
@@ -688,6 +698,45 @@ impl ChatWidget {
                 });
                 if source == SlashCommandDispatchSource::Live {
                     self.bottom_pane.drain_pending_submission_state();
+                }
+            }
+            SlashCommand::Loop if !trimmed.is_empty() => {
+                let parsed = match parse_loop_command_args(&args) {
+                    Ok(parsed) => parsed,
+                    Err(err) => {
+                        self.add_error_message(err);
+                        return;
+                    }
+                };
+                let loop_state = match LoopMessageState::create(parsed.interval, parsed.timeout) {
+                    Ok(loop_state) => loop_state,
+                    Err(err) => {
+                        self.add_error_message(err);
+                        return;
+                    }
+                };
+                let (task_text, task_elements) =
+                    split_task_text(args, text_elements, parsed.task_offset());
+                self.add_info_message(
+                    loop_started_message(parsed.interval, parsed.timeout),
+                    /*hint*/ None,
+                );
+                let mut user_message = self.prepared_inline_user_message(
+                    task_text,
+                    task_elements,
+                    local_images,
+                    remote_image_urls,
+                    mention_bindings,
+                    source,
+                );
+                user_message.loop_state = Some(Box::new(loop_state));
+                if self.is_session_configured() {
+                    self.reasoning_buffer.clear();
+                    self.full_reasoning_buffer.clear();
+                    self.set_status_header(String::from("Working"));
+                    self.submit_user_message(user_message);
+                } else {
+                    self.queue_user_message(user_message);
                 }
             }
             SlashCommand::Side if !trimmed.is_empty() => {
@@ -734,6 +783,7 @@ impl ChatWidget {
             remote_image_urls,
             text_elements,
             mention_bindings,
+            loop_state,
         } = user_message;
         let Some((name, rest, rest_offset)) = parse_slash_name(&text) else {
             self.submit_user_message(UserMessage {
@@ -742,6 +792,7 @@ impl ChatWidget {
                 remote_image_urls,
                 text_elements,
                 mention_bindings,
+                loop_state,
             });
             return QueueDrain::Stop;
         };
@@ -753,6 +804,7 @@ impl ChatWidget {
                 remote_image_urls,
                 text_elements,
                 mention_bindings,
+                loop_state,
             });
             return QueueDrain::Stop;
         }
@@ -780,6 +832,7 @@ impl ChatWidget {
                 remote_image_urls,
                 text_elements,
                 mention_bindings,
+                loop_state,
             });
             return QueueDrain::Stop;
         }
@@ -863,6 +916,7 @@ impl ChatWidget {
             | SlashCommand::Personality
             | SlashCommand::Plan
             | SlashCommand::Goal
+            | SlashCommand::Loop
             | SlashCommand::Collab
             | SlashCommand::Side
             | SlashCommand::Keymap

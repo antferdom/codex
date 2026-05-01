@@ -695,6 +695,7 @@ async fn queued_restore_with_remote_images_keeps_local_placeholder_mapping() {
         remote_image_urls: remote_image_urls.clone(),
         text_elements: text_elements.clone(),
         mention_bindings: Vec::new(),
+        loop_state: None,
     });
 
     assert_eq!(chat.bottom_pane.composer_text(), text);
@@ -724,6 +725,7 @@ async fn interrupted_turn_restore_keeps_active_mode_for_resubmission() {
             remote_image_urls: Vec::new(),
             text_elements: Vec::new(),
             mention_bindings: Vec::new(),
+            loop_state: None,
         }
         .into(),
     );
@@ -782,6 +784,7 @@ async fn remap_placeholders_uses_attachment_labels() {
         local_images: attachments,
         remote_image_urls: vec!["https://example.com/a.png".to_string()],
         mention_bindings: Vec::new(),
+        loop_state: None,
     };
     let mut next_label = 3usize;
     let remapped = remap_placeholders_for_message(message, &mut next_label);
@@ -848,6 +851,7 @@ async fn remap_placeholders_uses_byte_ranges_when_placeholder_missing() {
         local_images: attachments,
         remote_image_urls: Vec::new(),
         mention_bindings: Vec::new(),
+        loop_state: None,
     };
     let mut next_label = 3usize;
     let remapped = remap_placeholders_for_message(message, &mut next_label);
@@ -908,6 +912,7 @@ async fn restore_thread_input_state_syncs_sleep_inhibitor_state() {
         rejected_steer_history_records: VecDeque::new(),
         queued_user_messages: VecDeque::new(),
         queued_user_message_history_records: VecDeque::new(),
+        active_loop: None,
         user_turn_pending_start: false,
         current_collaboration_mode: chat.current_collaboration_mode.clone(),
         active_collaboration_mask: chat.active_collaboration_mask.clone(),

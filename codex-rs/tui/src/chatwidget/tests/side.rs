@@ -249,6 +249,7 @@ async fn slash_side_requests_forked_side_question_while_task_running() {
                     remote_image_urls: Vec::new(),
                     text_elements: Vec::new(),
                     mention_bindings: Vec::new(),
+                    loop_state: None,
                 }
     );
     assert!(
